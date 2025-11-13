@@ -80,43 +80,165 @@ The workflow consists of four main stages:
 
 ```
 📱 Telegram Message → ⚙️ Configuration → 🧠 Parser → ✅ Confirmation
-```
 
-### Node-by-Node Breakdown
+Node-by-Node Breakdown
 
-#### 1️⃣ Telegram Order Request (Trigger)
-- **Type:** Telegram Trigger
-- **Function:** Listens for incoming messages from your Telegram bot
-- **Captures:** Order text and chat information
-- **Updates:** message
+1️⃣ Telegram Order Request (Trigger)
 
-#### 2️⃣ Workflow Configuration (Data Storage)
-- **Type:** Edit Fields (Set) - Manual
-- **Function:** Stores SauceDemo credentials and settings
-- **Contains:**
-  - `sauceDemoUrl`: https://www.saucedemo.com
-  - `username`: standard_user
-  - `password`: secret_sauce
-  - Customer information (firstName, lastName, postalCode)
+Type: Telegram Trigger
+Function: Listens for incoming messages from your Telegram bot
+Captures: Order text and chat information
+Updates: message
+Output Example:
 
-#### 3️⃣ Parse Order Details (Logic Processing)
-- **Type:** Code (JavaScript)
-- **Function:** Analyzes the message and extracts order information
-- **Process:**
-  - Converts message to lowercase
-  - Searches for product keywords
-  - Maps product names to SauceDemo product IDs
-  - Extracts customer details
-  - Returns structured order data
+json{
+  "update_id": 123456789,
+  "message": {
+    "message_id": 42,
+    "from": {
+      "id": 987654321,
+      "first_name": "John",
+      "last_name": "Doe"
+    },
+    "chat": {
+      "id": 987654321,
+      "type": "private"
+    },
+    "text": "I want a backpack and bike light"
+  }
+}
+2️⃣ Workflow Configuration (Data Storage)
 
-#### 4️⃣ Send Success Message (Response)
-- **Type:** Telegram (sendMessage)
-- **Function:** Sends confirmation back to the user
-- **Contains:**
-  - ✅ Order confirmation header
-  - Bulleted list of ordered items
-  - Thank you message
-  - Automatic n8n signature
+Type: Edit Fields (Set) - Manual
+Function: Enriches incoming data with SauceDemo credentials and settings
+Important Setting: includeOtherFields: true - This keeps all data from previous node
+Contains:
+
+sauceDemoUrl: https://www.saucedemo.com
+username: standard_user
+password: secret_sauce
+Customer information (firstName, lastName, postalCode)
+
+
+
+How It Works:
+INPUT (from Telegram):          ADDS:                           OUTPUT:
+{                               +                               {
+  "message": {...}              "sauceDemoUrl": "...",           "message": {...},
+}                               "username": "...",               "sauceDemoUrl": "...",
+                                "password": "..."                "username": "...",
+                                                                 "password": "..."
+                                                                }
+Why It's Important:
+
+Centralizes all configuration in one place
+Easy to modify settings without changing code
+Other nodes can reference these values
+Separates configuration from business logic
+
+3️⃣ Parse Order Details (Logic Processing)
+
+Type: Code (JavaScript)
+Function: Analyzes the message and extracts order information
+Process:
+
+Gets message text: $input.first().json.message.text
+Accesses config data: $('Workflow Configuration').first().json
+Converts message to lowercase for matching
+Searches for product keywords using productMap
+Maps product names to SauceDemo product IDs
+Extracts customer details with fallback defaults
+Returns structured order data
+
+
+
+Data Access Examples:
+javascript// Get data from previous node
+const telegramMessage = $input.first().json.message.text.toLowerCase();
+
+// Get data from specific node by name
+const config = $('Workflow Configuration').first().json;
+
+// Access configuration values
+const url = config.sauceDemoUrl;  // "https://www.saucedemo.com"
+Product Matching Logic:
+javascript// Message: "i want a backpack and bike light"
+
+// Loop through productMap
+if (telegramMessage.includes('backpack'))     // ✅ Found!
+  → Add { name: 'backpack', id: 'sauce-labs-backpack' }
+
+if (telegramMessage.includes('bike light'))   // ✅ Found!
+  → Add { name: 'bike light', id: 'sauce-labs-bike-light' }
+
+if (telegramMessage.includes('onesie'))       // ❌ Not found
+  → Skip
+Output Example:
+json{
+  "items": [
+    { "name": "backpack", "id": "sauce-labs-backpack" },
+    { "name": "bike light", "id": "sauce-labs-bike-light" }
+  ],
+  "customerInfo": {
+    "firstName": "John",
+    "lastName": "Doe",
+    "postalCode": "12345"
+  },
+  "originalMessage": "I want a backpack and bike light",
+  "chatId": 987654321
+}
+4️⃣ Send Success Message (Response)
+
+Type: Telegram (sendMessage)
+Function: Sends confirmation back to the user
+Data Access:
+
+Chat ID: $('Telegram Order Request').item.json.message.chat.id
+Order items: $('Parse Order Details').item.json.items
+
+
+Message Format:
+
+  ✅ Order Received!
+  
+  Items requested:
+  • backpack
+  • bike light
+  
+  Thank you for your order!
+📊 Complete Data Flow
+┌─────────────────────────────────────────────────────────────┐
+│  1️⃣  TELEGRAM ORDER REQUEST                                 │
+│  ─────────────────────────────────────────────────────────  │
+│  User: "I want a backpack and bike light"                  │
+│  Output: { message: { text: "...", chat: {...} } }         │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  2️⃣  WORKFLOW CONFIGURATION                                 │
+│  ─────────────────────────────────────────────────────────  │
+│  Receives: All Telegram data                               │
+│  Adds: sauceDemoUrl, username, password                    │
+│  Output: { message: {...}, sauceDemoUrl: "...", ... }      │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  3️⃣  PARSE ORDER DETAILS                                    │
+│  ─────────────────────────────────────────────────────────  │
+│  Reads: message.text (from step 1)                         │
+│  Uses: config data (from step 2)                           │
+│  Analyzes: "backpack" → sauce-labs-backpack                │
+│           "bike light" → sauce-labs-bike-light             │
+│  Output: { items: [...], customerInfo: {...} }             │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  4️⃣  SEND SUCCESS MESSAGE                                   │
+│  ─────────────────────────────────────────────────────────  │
+│  Gets: chat.id (from step 1)                               │
+│  Gets: items array (from step 3)                           │
+│  Sends: Formatted confirmation to Telegram                 │
+└───────────────────────────────────────
 
 ## 🛠️ Technologies Used
 
