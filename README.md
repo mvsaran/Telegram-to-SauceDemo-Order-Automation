@@ -21,6 +21,57 @@ This project demonstrates an intelligent order automation system that bridges Te
 - 🔧 **Highly Customizable** - Easy to extend with new products and features
 - 📊 **Execution Tracking** - Monitor all order executions in n8n
 
+## 📸 Visual Overview
+
+### Workflow Architecture
+
+![Workflow Diagram](docs/workflow-diagram.png)
+
+The workflow consists of four connected nodes that process orders seamlessly:
+
+```
+┌─────────────────────┐      ┌─────────────────────┐      ┌─────────────────────┐      ┌─────────────────────┐
+│  Telegram Order     │      │   Workflow          │      │   Parse Order       │      │  Send Success       │
+│  Request            │─────▶│   Configuration     │─────▶│   Details           │─────▶│  Message            │
+│  (Trigger)          │      │   (Data Storage)    │      │   (Logic/Parser)    │      │  (Response)         │
+└─────────────────────┘      └─────────────────────┘      └─────────────────────┘      └─────────────────────┘
+   Updates: message              manual                       Code execution              sendMessage: message
+```
+
+### Bot Conversation Example
+
+![Bot Conversation](docs/bot-conversation.png)
+
+**Real conversation flow:**
+
+```
+👤 User: "I want a backpack"
+🤖 Bot:  ✅ Order Received!
+        
+        Items requested:
+        • backpack
+        
+        Thank you for your order!
+
+👤 User: "Order bike light and fleece jacket"
+🤖 Bot:  ✅ Order Received!
+        
+        Items requested:
+        • bike light
+        • fleece jacket
+        
+        Thank you for your order!
+
+👤 User: "I want a fleece jacket and onesie"
+🤖 Bot:  ✅ Order Received!
+        
+        Items requested:
+        • fleece jacket
+        • onesie
+        
+        Thank you for your order!
+```
+
 ## 🎯 How It Works
 
 The workflow consists of four main stages:
@@ -29,26 +80,41 @@ The workflow consists of four main stages:
 📱 Telegram Message → ⚙️ Configuration → 🧠 Parser → ✅ Confirmation
 ```
 
-### Workflow Architecture
+### Node-by-Node Breakdown
 
-1. **Telegram Order Request** (Trigger)
-   - Listens for incoming messages from your Telegram bot
-   - Captures the order text and chat information
+#### 1️⃣ Telegram Order Request (Trigger)
+- **Type:** Telegram Trigger
+- **Function:** Listens for incoming messages from your Telegram bot
+- **Captures:** Order text and chat information
+- **Updates:** message
 
-2. **Workflow Configuration** (Data Storage)
-   - Stores SauceDemo credentials and settings
-   - Maintains customer information
-   - URL: `https://www.saucedemo.com`
+#### 2️⃣ Workflow Configuration (Data Storage)
+- **Type:** Edit Fields (Set) - Manual
+- **Function:** Stores SauceDemo credentials and settings
+- **Contains:**
+  - `sauceDemoUrl`: https://www.saucedemo.com
+  - `username`: standard_user
+  - `password`: secret_sauce
+  - Customer information (firstName, lastName, postalCode)
 
-3. **Parse Order Details** (Logic Processing)
-   - Analyzes the message using JavaScript
-   - Maps product names to SauceDemo product IDs
-   - Extracts customer details and order items
+#### 3️⃣ Parse Order Details (Logic Processing)
+- **Type:** Code (JavaScript)
+- **Function:** Analyzes the message and extracts order information
+- **Process:**
+  - Converts message to lowercase
+  - Searches for product keywords
+  - Maps product names to SauceDemo product IDs
+  - Extracts customer details
+  - Returns structured order data
 
-4. **Send Success Message** (Response)
-   - Formats a professional confirmation message
-   - Sends it back to the user via Telegram
-   - Lists all items in the order
+#### 4️⃣ Send Success Message (Response)
+- **Type:** Telegram (sendMessage)
+- **Function:** Sends confirmation back to the user
+- **Contains:**
+  - ✅ Order confirmation header
+  - Bulleted list of ordered items
+  - Thank you message
+  - Automatic n8n signature
 
 ## 🛠️ Technologies Used
 
@@ -105,18 +171,68 @@ Currently, the workflow recognizes these products:
 
 ## 💬 Usage Examples
 
-Send these messages to your bot:
-
+### Example 1: Single Item Order
 ```
-"I want a backpack"
-→ Orders 1 item: Backpack
+👤 You: "I want a backpack"
 
-"Order bike light and bolt t-shirt"
-→ Orders 2 items: Bike Light, Bolt T-Shirt
+🤖 Bot Response:
+✅ Order Received!
 
-"Get me a fleece jacket, onesie, and backpack"
-→ Orders 3 items: Fleece Jacket, Onesie, Backpack
+Items requested:
+• backpack
+
+Thank you for your order!
 ```
+
+### Example 2: Multiple Items Order
+```
+👤 You: "Order bike light and fleece jacket"
+
+🤖 Bot Response:
+✅ Order Received!
+
+Items requested:
+• bike light
+• fleece jacket
+
+Thank you for your order!
+```
+
+### Example 3: Complex Order
+```
+👤 You: "Get me a fleece jacket, onesie, and backpack please"
+
+🤖 Bot Response:
+✅ Order Received!
+
+Items requested:
+• fleece jacket
+• onesie
+• backpack
+
+Thank you for your order!
+```
+
+### Example 4: Natural Language
+```
+👤 You: "I'd like to order a t-shirt and bike light"
+
+🤖 Bot Response:
+✅ Order Received!
+
+Items requested:
+• bolt t-shirt
+• bike light
+
+Thank you for your order!
+```
+
+**Note:** The bot understands natural language! You can phrase your orders however you like:
+- "I want..."
+- "Order..."
+- "Get me..."
+- "I'd like..."
+- "Can I have..."
 
 ## 🔧 Customization
 
@@ -211,6 +327,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Saran Kumar**
+- GitHub: [@sarankumar](https://github.com/sarankumar)
+- LinkedIn: [Saran Kumar](https://linkedin.com/in/sarankumar)
 
 ## 🙏 Acknowledgments
 
