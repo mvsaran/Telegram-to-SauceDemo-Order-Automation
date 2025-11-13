@@ -41,7 +41,8 @@ The workflow consists of four connected nodes that process orders seamlessly:
 
 ### Bot Conversation Example
 
-![Bot Conversation](docs/bot-conversation.png)
+<img width="1093" height="912" alt="image" src="https://github.com/user-attachments/assets/8ae93c9e-420c-4205-aa82-422728efc6f3" />
+
 
 **Real conversation flow:**
 
