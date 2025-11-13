@@ -25,7 +25,8 @@ This project demonstrates an intelligent order automation system that bridges Te
 
 ### Workflow Architecture
 
-![Workflow Diagram](docs/workflow-diagram.png)
+<img width="1232" height="248" alt="image" src="https://github.com/user-attachments/assets/a5d45722-8c5d-4856-a5c3-ee6481c7f17c" />
+
 
 The workflow consists of four connected nodes that process orders seamlessly:
 
